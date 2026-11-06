@@ -2,11 +2,27 @@ import type { Transaction } from "@/types/transaction";
 
 const HEADERS = ["Título", "Categoria", "Tipo", "Valor", "Data"];
 
-function escapeCsvField(value: string): string {
-  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
-    return `"${value.replace(/"/g, '""')}"`;
+// Campos que começam com =, +, -, @ (ou tab/CR) podem ser interpretados como
+// fórmula pelo Excel/Google Sheets ao abrir o CSV ("CSV Injection"/"Formula
+// Injection" — ver OWASP). Como título e categoria vêm de texto livre do
+// usuário, prefixamos esses caracteres com uma aspa simples para neutralizar.
+const FORMULA_TRIGGER_CHARS = ["=", "+", "-", "@", "\t", "\r"];
+
+function sanitizeCsvField(value: string): string {
+  if (FORMULA_TRIGGER_CHARS.some((char) => value.startsWith(char))) {
+    return `'${value}`;
   }
   return value;
+}
+
+function escapeCsvField(value: string): string {
+  const sanitized = sanitizeCsvField(value);
+
+  if (sanitized.includes(",") || sanitized.includes('"') || sanitized.includes("\n")) {
+    return `"${sanitized.replace(/"/g, '""')}"`;
+  }
+
+  return sanitized;
 }
 
 function toCsv(transactions: Transaction[]): string {

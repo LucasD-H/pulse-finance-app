@@ -82,7 +82,7 @@ export default function RegisterPage() {
             id="password"
             type="password"
             required
-            minLength={6}
+            minLength={8}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             className="rounded-lg border border-border bg-white/5 px-3 py-2 text-sm outline-none focus:border-accent"

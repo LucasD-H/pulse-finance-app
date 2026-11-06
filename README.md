@@ -35,6 +35,8 @@ Crie um arquivo `.env` em `pulse-finance-api/` com:
 ```
 DATABASE_URL="postgresql://root:password@localhost:5432/pulsefinance?schema=public"
 JWT_SECRET="sua-chave-secreta-aqui"
+# Opcional: restringe o CORS à URL do frontend (sem isso, libera qualquer origem)
+CORS_ORIGIN="http://localhost:3000"
 ```
 
 ### 2. Frontend (web)
@@ -69,6 +71,25 @@ Acesse `http://localhost:3000`, crie uma conta e faça login para acessar o dash
 ## Design
 
 Tema dark nativo com cards em efeito glassmorphism (fundo translúcido + blur) e cor de destaque emerald. Sidebar fixa para navegação entre Dashboard, Transações, Relatórios e Configurações.
+
+## Segurança
+
+Decisões e mitigações aplicadas:
+
+- **Senhas**: hash com `bcrypt` (custo 10), nunca armazenadas nem retornadas em texto puro.
+- **Autenticação**: JWT assinado, validado em todas as rotas de transações via middleware.
+- **Autorização**: toda consulta/alteração de transação filtra por `userId`, prevenindo que um usuário acesse dados de outro (IDOR).
+- **Rate limiting**: limite geral de requisições por IP, e um limite mais rígido em `/users` e `/sessions` para dificultar força bruta e spam de cadastro.
+- **Helmet**: cabeçalhos HTTP de segurança (CSP, `X-Content-Type-Options`, `X-Frame-Options`, etc.) no backend.
+- **CORS configurável**: via `CORS_ORIGIN`, para restringir em produção quem pode chamar a API.
+- **Validação de entrada**: todos os bodies são validados com `zod` antes de tocar o banco.
+- **CSV Injection**: campos de texto livre (título/categoria) são sanitizados antes da exportação, para que não sejam interpretados como fórmula ao abrir no Excel/Sheets.
+- **Variáveis obrigatórias**: a API falha rápido na inicialização se `DATABASE_URL` ou `JWT_SECRET` não estiverem definidas, em vez de falhar de forma confusa na primeira requisição.
+
+Limitações conhecidas (aceitáveis para um projeto de estudo, mas a evitar em produção real):
+
+- O JWT é guardado no `localStorage` do navegador, o que o expõe a roubo via XSS. Em produção, o ideal é um cookie `httpOnly` emitido pelo próprio backend.
+- `npm audit` no backend acusa uma vulnerabilidade em `deepmerge-ts`, dependência transitiva da **CLI** do Prisma (`@prisma/config`) — não faz parte do código que roda em produção nem é alcançável via HTTP. Corrigi-la exigiria migrar para uma versão ainda instável (release candidate) do Prisma.
 
 ## Possíveis próximos passos
 

@@ -7,7 +7,7 @@ import { prisma } from "../lib/prisma.js";
 const createUserSchema = z.object({
   name: z.string().min(2),
   email: z.email(),
-  password: z.string().min(6),
+  password: z.string().min(8),
 });
 
 export async function create(req: Request, res: Response) {
@@ -25,7 +25,7 @@ export async function create(req: Request, res: Response) {
     return res.status(409).json({ message: "E-mail já cadastrado" });
   }
 
-  const passwordHash = await bcrypt.hash(password, 8);
+  const passwordHash = await bcrypt.hash(password, 10);
 
   const user = await prisma.user.create({
     data: { name, email, passwordHash },
@@ -39,9 +39,12 @@ export async function create(req: Request, res: Response) {
   });
 }
 
+// No login, validamos só a presença da senha — exigir um tamanho mínimo
+// aqui reforçaria uma política nova sobre contas já existentes, que podem
+// ter sido criadas com regras antigas.
 const authenticateSchema = z.object({
   email: z.email(),
-  password: z.string().min(6),
+  password: z.string().min(1),
 });
 
 export async function authenticate(req: Request, res: Response) {
