@@ -2,10 +2,13 @@
 
 import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { SummaryCard } from "@/components/summary-card";
+import { EvolutionChart } from "@/components/evolution-chart";
 import { useTransactions } from "@/hooks/use-transactions";
+import { buildMonthlyEvolution } from "@/lib/chart-data";
 
 export default function DashboardPage() {
   const { transactions, isLoading, error } = useTransactions();
+  const monthlyEvolution = buildMonthlyEvolution(transactions);
 
   const income = transactions
     .filter((t) => t.type === "INCOME")
@@ -35,14 +38,29 @@ export default function DashboardPage() {
       </div>
 
       <div className="glass-panel rounded-2xl p-6">
-        <h2 className="mb-4 text-sm font-medium text-muted">
-          Evolução financeira
-        </h2>
-        <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted">
-          {isLoading
-            ? "Carregando transações..."
-            : "Gráfico (Recharts) entra aqui na próxima etapa"}
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-medium text-muted">
+            Evolução financeira (últimos 6 meses)
+          </h2>
+          <div className="flex items-center gap-4 text-xs text-muted">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              Entradas
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-red-400" />
+              Saídas
+            </span>
+          </div>
         </div>
+
+        {isLoading ? (
+          <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted">
+            Carregando transações...
+          </div>
+        ) : (
+          <EvolutionChart data={monthlyEvolution} />
+        )}
       </div>
     </div>
   );
