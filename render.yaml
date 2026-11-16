@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: pulse-finance-api
+    runtime: node
+    plan: free
+    rootDir: pulse-finance-api
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && npm run start
+    healthCheckPath: /health
+    envVars:
+      # Cole aqui a connection string do Neon (Dashboard do Render pedirá o valor).
+      - key: DATABASE_URL
+        sync: false
+      # Gerado automaticamente pelo Render no primeiro deploy.
+      - key: JWT_SECRET
+        generateValue: true
+      # Preencha com a URL do frontend na Vercel depois do primeiro deploy dela.
+      - key: CORS_ORIGIN
+        sync: false
+      - key: NODE_ENV
+        value: production

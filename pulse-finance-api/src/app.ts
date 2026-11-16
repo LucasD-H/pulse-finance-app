@@ -7,6 +7,13 @@ import { transactionRoutes } from "./routes/transaction.routes.js";
 
 export const app = express();
 
+// Usado pelo health check do provedor de hospedagem (Render, etc.) para
+// saber se o serviço está de pé. Fica antes do helmet/rate-limit de
+// propósito: é inofensivo e pode ser chamado com alta frequência.
+app.get("/health", (_req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 app.use(helmet());
 
 // Em produção, definir CORS_ORIGIN com a URL do frontend (ex: o domínio da
