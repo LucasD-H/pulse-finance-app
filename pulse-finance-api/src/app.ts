@@ -9,7 +9,7 @@ export const app = express();
 
 app.use(helmet());
 
-// Em produção, defina CORS_ORIGIN com a URL do frontend (ex: o domínio da
+// Em produção, definir CORS_ORIGIN com a URL do frontend (ex: o domínio da
 // Vercel). Sem a variável, libera tudo — conveniente em dev, mas não é o
 // ideal para produção.
 app.use(cors({ origin: process.env.CORS_ORIGIN ?? "*" }));
@@ -26,11 +26,13 @@ app.use(
   }),
 );
 
-// Limite mais rígido nas rotas de autenticação, para dificultar força
-// bruta de senha e spam de cadastros.
+// Limite mais rígido nas rotas de autenticação, para dificultar força bruta
+// de senha e spam de cadastros. Configurável via AUTH_RATE_LIMIT_MAX: em
+// produção, deixe o padrão (10) ou mais baixo; em dev/testes automatizados
+// (que criam várias contas em sequência), vale subir bastante esse valor.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 10,
+  limit: Number(process.env.AUTH_RATE_LIMIT_MAX ?? 10),
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Muitas tentativas. Tente novamente mais tarde." },

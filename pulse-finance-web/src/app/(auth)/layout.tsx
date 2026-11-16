@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
+import { useIsHydrated } from "@/hooks/use-is-hydrated";
 
 export default function AuthLayout({
   children,
@@ -10,15 +11,16 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   const { user } = useAuth();
+  const isHydrated = useIsHydrated();
   const router = useRouter();
 
   useEffect(() => {
-    if (user) {
+    if (isHydrated && user) {
       router.replace("/");
     }
-  }, [user, router]);
+  }, [isHydrated, user, router]);
 
-  if (user) {
+  if (isHydrated && user) {
     return null;
   }
 
