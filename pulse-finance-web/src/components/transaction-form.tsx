@@ -1,18 +1,24 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Plus } from "lucide-react";
-import type { CreateTransactionInput, TransactionType } from "@/types/transaction";
+import { Plus, Save } from "lucide-react";
+import type { CreateTransactionInput, Transaction, TransactionType } from "@/types/transaction";
 
 type TransactionFormProps = {
   onSubmit: (input: CreateTransactionInput) => Promise<void>;
+  initialValues?: Pick<Transaction, "title" | "amount" | "type" | "category">;
+  onCancel?: () => void;
 };
 
-export function TransactionForm({ onSubmit }: TransactionFormProps) {
-  const [title, setTitle] = useState("");
-  const [amount, setAmount] = useState("");
-  const [type, setType] = useState<TransactionType>("EXPENSE");
-  const [category, setCategory] = useState("");
+export function TransactionForm({ onSubmit, initialValues, onCancel }: TransactionFormProps) {
+  const isEditMode = Boolean(initialValues);
+
+  const [title, setTitle] = useState(initialValues?.title ?? "");
+  const [amount, setAmount] = useState(
+    initialValues ? String(initialValues.amount).replace(".", ",") : "",
+  );
+  const [type, setType] = useState<TransactionType>(initialValues?.type ?? "EXPENSE");
+  const [category, setCategory] = useState(initialValues?.category ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,11 +36,17 @@ export function TransactionForm({ onSubmit }: TransactionFormProps) {
     setIsSubmitting(true);
     try {
       await onSubmit({ title, amount: parsedAmount, type, category });
-      setTitle("");
-      setAmount("");
-      setCategory("");
+      if (!isEditMode) {
+        setTitle("");
+        setAmount("");
+        setCategory("");
+      }
     } catch {
-      setError("Não foi possível criar a transação");
+      setError(
+        isEditMode
+          ? "Não foi possível salvar as alterações"
+          : "Não foi possível criar a transação",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -43,7 +55,11 @@ export function TransactionForm({ onSubmit }: TransactionFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="glass-panel flex flex-col gap-4 rounded-2xl p-6 lg:flex-row lg:items-end"
+      className={
+        isEditMode
+          ? "flex flex-col gap-4"
+          : "glass-panel flex flex-col gap-4 rounded-2xl p-6 lg:flex-row lg:items-end"
+      }
     >
       <div className="flex flex-1 flex-col gap-1.5">
         <label htmlFor="title" className="text-xs font-medium text-muted">
@@ -100,18 +116,28 @@ export function TransactionForm({ onSubmit }: TransactionFormProps) {
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-      >
-        <Plus className="h-4 w-4" />
-        {isSubmitting ? "Adicionando..." : "Adicionar"}
-      </button>
+      <div className="flex gap-2">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
+          >
+            Cancelar
+          </button>
+        )}
 
-      {error && (
-        <p className="text-sm text-red-400 lg:basis-full">{error}</p>
-      )}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          {isEditMode ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          {isSubmitting ? "Salvando..." : isEditMode ? "Salvar" : "Adicionar"}
+        </button>
+      </div>
+
+      {error && <p className="text-sm text-red-400 lg:basis-full">{error}</p>}
     </form>
   );
 }

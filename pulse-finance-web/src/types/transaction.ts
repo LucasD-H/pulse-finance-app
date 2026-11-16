@@ -18,3 +18,17 @@ export type CreateTransactionInput = {
   type: TransactionType;
   category: string;
 };
+
+export type UpdateTransactionInput = Partial<CreateTransactionInput>;
+
+export type PaginationMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export type PaginatedTransactions = {
+  data: Transaction[];
+  meta: PaginationMeta;
+};

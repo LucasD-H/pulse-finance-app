@@ -3,11 +3,11 @@
 import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { SummaryCard } from "@/components/summary-card";
 import { EvolutionChart } from "@/components/evolution-chart";
-import { useTransactions } from "@/hooks/use-transactions";
+import { useAllTransactions } from "@/hooks/use-transactions";
 import { buildMonthlyEvolution } from "@/lib/chart-data";
 
 export default function DashboardPage() {
-  const { transactions, isLoading, error } = useTransactions();
+  const { transactions, isLoading, error } = useAllTransactions();
   const monthlyEvolution = buildMonthlyEvolution(transactions);
 
   const income = transactions

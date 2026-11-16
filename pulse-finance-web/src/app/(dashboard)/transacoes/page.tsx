@@ -1,27 +1,38 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { TransactionForm } from "@/components/transaction-form";
 import { TransactionTable } from "@/components/transaction-table";
 import { TransactionFiltersBar } from "@/components/transaction-filters";
+import { EditTransactionModal } from "@/components/edit-transaction-modal";
+import { Pagination } from "@/components/pagination";
 import { useTransactions } from "@/hooks/use-transactions";
-import {
-  applyFilters,
-  defaultFilters,
-  uniqueCategories,
-  type TransactionFilters,
-} from "@/lib/filter-transactions";
+import { useCategories } from "@/hooks/use-categories";
+import { defaultFilters, type TransactionFilters } from "@/lib/filter-transactions";
+import type { Transaction } from "@/types/transaction";
+
+const PAGE_SIZE = 10;
 
 export default function TransacoesPage() {
-  const { transactions, isLoading, error, createTransaction, removeTransaction } =
-    useTransactions();
   const [filters, setFilters] = useState<TransactionFilters>(defaultFilters);
+  const [page, setPage] = useState(1);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
-  const categories = useMemo(() => uniqueCategories(transactions), [transactions]);
-  const filteredTransactions = useMemo(
-    () => applyFilters(transactions, filters),
-    [transactions, filters],
-  );
+  const {
+    transactions,
+    meta,
+    isLoading,
+    error,
+    createTransaction,
+    updateTransaction,
+    removeTransaction,
+  } = useTransactions(filters, page, PAGE_SIZE);
+  const categories = useCategories();
+
+  function handleFiltersChange(next: TransactionFilters) {
+    setFilters(next);
+    setPage(1); // toda mudança de filtro volta para a primeira página
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -37,7 +48,7 @@ export default function TransacoesPage() {
       <TransactionFiltersBar
         filters={filters}
         categories={categories}
-        onChange={setFilters}
+        onChange={handleFiltersChange}
       />
 
       <div className="glass-panel rounded-2xl p-6">
@@ -49,16 +60,32 @@ export default function TransacoesPage() {
           </div>
         ) : (
           <>
-            <p className="mb-4 text-xs text-muted">
-              {filteredTransactions.length} de {transactions.length} transações
-            </p>
+            {meta && (
+              <p className="mb-4 text-xs text-muted">
+                {meta.total} transação{meta.total === 1 ? "" : "ões"} encontrada
+                {meta.total === 1 ? "" : "s"}
+              </p>
+            )}
             <TransactionTable
-              transactions={filteredTransactions}
+              transactions={transactions}
+              onEdit={setEditingTransaction}
               onDelete={removeTransaction}
             />
+            {meta && meta.totalPages > 1 && (
+              <Pagination page={meta.page} totalPages={meta.totalPages} onChange={setPage} />
+            )}
           </>
         )}
       </div>
+
+      <EditTransactionModal
+        transaction={editingTransaction}
+        onClose={() => setEditingTransaction(null)}
+        onSubmit={async (id, input) => {
+          await updateTransaction(id, input);
+          setEditingTransaction(null);
+        }}
+      />
     </div>
   );
 }

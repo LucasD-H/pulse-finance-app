@@ -3,12 +3,12 @@
 import { useMemo } from "react";
 import { Download } from "lucide-react";
 import { CategoryBreakdownChart } from "@/components/category-breakdown-chart";
-import { useTransactions } from "@/hooks/use-transactions";
+import { useAllTransactions } from "@/hooks/use-transactions";
 import { buildCategoryBreakdown } from "@/lib/category-breakdown";
 import { downloadTransactionsCsv } from "@/lib/csv-export";
 
 export default function RelatoriosPage() {
-  const { transactions, isLoading } = useTransactions();
+  const { transactions, isLoading } = useAllTransactions();
 
   const expensesByCategory = useMemo(
     () => buildCategoryBreakdown(transactions, "EXPENSE"),

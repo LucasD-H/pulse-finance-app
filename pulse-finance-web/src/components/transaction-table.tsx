@@ -1,11 +1,12 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/types/transaction";
 
 type TransactionTableProps = {
   transactions: Transaction[];
+  onEdit: (transaction: Transaction) => void;
   onDelete: (id: string) => void;
 };
 
@@ -20,7 +21,7 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   year: "numeric",
 });
 
-export function TransactionTable({ transactions, onDelete }: TransactionTableProps) {
+export function TransactionTable({ transactions, onEdit, onDelete }: TransactionTableProps) {
   if (transactions.length === 0) {
     return (
       <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted">
@@ -59,14 +60,24 @@ export function TransactionTable({ transactions, onDelete }: TransactionTablePro
                 {currencyFormatter.format(transaction.amount)}
               </td>
               <td className="py-3 text-right">
-                <button
-                  type="button"
-                  onClick={() => onDelete(transaction.id)}
-                  className="rounded-lg p-2 text-muted transition-colors hover:bg-red-500/10 hover:text-red-400"
-                  aria-label={`Excluir ${transaction.title}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="flex justify-end gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onEdit(transaction)}
+                    className="rounded-lg p-2 text-muted transition-colors hover:bg-white/5 hover:text-foreground"
+                    aria-label={`Editar ${transaction.title}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDelete(transaction.id)}
+                    className="rounded-lg p-2 text-muted transition-colors hover:bg-red-500/10 hover:text-red-400"
+                    aria-label={`Excluir ${transaction.title}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

@@ -1,14 +1,70 @@
 import { z } from "zod";
 import type { Request, Response } from "express";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 
+const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use o formato AAAA-MM-DD");
+
+const listQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  // O limite máximo (1000) existe para o dashboard/relatórios poderem pedir
+  // "tudo" em uma chamada só para montar gráficos/exportações, sem abrir mão
+  // de um teto que evite uma única requisição trazer o banco inteiro.
+  limit: z.coerce.number().int().min(1).max(1000).default(10),
+  type: z.enum(["INCOME", "EXPENSE"]).optional(),
+  category: z.string().min(1).optional(),
+  startDate: isoDateSchema.optional(),
+  endDate: isoDateSchema.optional(),
+});
+
 export async function list(req: Request, res: Response) {
-  const transactions = await prisma.transaction.findMany({
+  const parsed = listQuerySchema.safeParse(req.query);
+
+  if (!parsed.success) {
+    return res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+  }
+
+  const { page, limit, type, category, startDate, endDate } = parsed.data;
+
+  const where: Prisma.TransactionWhereInput = { userId: req.userId };
+
+  if (type) where.type = type;
+  if (category) where.category = category;
+
+  if (startDate || endDate) {
+    where.date = {
+      ...(startDate ? { gte: new Date(`${startDate}T00:00:00.000Z`) } : {}),
+      ...(endDate ? { lte: new Date(`${endDate}T23:59:59.999Z`) } : {}),
+    };
+  }
+
+  const [transactions, total] = await Promise.all([
+    prisma.transaction.findMany({
+      where,
+      orderBy: { date: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.transaction.count({ where }),
+  ]);
+
+  return res.json({
+    data: transactions,
+    meta: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+  });
+}
+
+export async function listCategories(req: Request, res: Response) {
+  // Independe dos filtros/paginação: alimenta o dropdown de categorias
+  // com todas as categorias já usadas pelo usuário.
+  const rows = await prisma.transaction.findMany({
     where: { userId: req.userId },
-    orderBy: { date: "desc" },
+    select: { category: true },
+    distinct: ["category"],
+    orderBy: { category: "asc" },
   });
 
-  return res.json(transactions);
+  return res.json(rows.map((row) => row.category));
 }
 
 const createTransactionSchema = z.object({

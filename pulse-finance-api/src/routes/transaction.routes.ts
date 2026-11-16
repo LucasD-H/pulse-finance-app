@@ -8,6 +8,7 @@ export const transactionRoutes = Router();
 transactionRoutes.use(ensureAuthenticated);
 
 transactionRoutes.get("/transactions", transactionController.list);
+transactionRoutes.get("/transactions/categories", transactionController.listCategories);
 transactionRoutes.post("/transactions", transactionController.create);
 transactionRoutes.put("/transactions/:id", transactionController.update);
 transactionRoutes.delete("/transactions/:id", transactionController.remove);
